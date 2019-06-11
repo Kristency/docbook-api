@@ -23,11 +23,11 @@ app.post('/streams/new', (req, res) => {
 		if (err) {
 			console.log(err);
 		} else {
-			console.log(createdStream);
+			res.send(createdStream);
 		}
 	});
 });
 
-app.listen(8080 || process.env.PORT, process.env.IP, () => {
+app.listen(process.env.PORT || 8080, process.env.IP, () => {
 	console.log('Server is running on port 8080');
 });
