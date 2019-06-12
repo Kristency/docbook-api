@@ -1,12 +1,11 @@
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
 const cors = require('cors');
 
 //app config
 app.use(cors());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 mongoose.connect(process.env.DATABASEURL || 'mongodb://localhost:27017/streamy-api', { useNewUrlParser: true });
 
 //requiring models
