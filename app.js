@@ -17,8 +17,13 @@ mongoose.connect(
 const Stream = require('./models/stream');
 
 //setting up routes
+
+/* Don't use promises on database querying methods as they result
+	in unexpected behaviour (like console logging instead of sending response while calling res.send() ). 
+	So don't use .then() after asynchronous database CRUD operations, instead use callback functions for now. */
+
 app.get('/streams', (req, res) => {
-	Stream.find({}).then((err, foundStreams) => {
+	Stream.find({}, (err, foundStreams) => {
 		if (err) {
 			console.log(err);
 		} else {
@@ -28,7 +33,7 @@ app.get('/streams', (req, res) => {
 });
 
 app.get('/streams/:id', (req, res) => {
-	Stream.findById(req.params.id).then((err, foundStream) => {
+	Stream.findById(req.params.id, (err, foundStream) => {
 		if (err) {
 			console.log(err);
 		} else {
