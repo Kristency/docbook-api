@@ -8,6 +8,7 @@ app.use(cors())
 app.use(express.json()) // because axios sends only json , not url-encoded
 // use bodyParser or express.urlEncoded when sending a post request directly through a form.
 
+// Don't forget to whitelist your IP on Mongo Atlas for connecting to the database while deployed on Heroku
 mongoose.connect(
 	process.env.DATABASEURL || 'mongodb://localhost:27017/streamy-api',
 	{ useNewUrlParser: true }
