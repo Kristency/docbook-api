@@ -9,10 +9,9 @@ app.use(express.json()) // because axios sends only json , not url-encoded
 // use bodyParser or express.urlEncoded when sending a post request directly through a form.
 
 // Don't forget to whitelist your IP on Mongo Atlas for connecting to the database while deployed on Heroku
-mongoose.connect(
-	process.env.DATABASEURL || 'mongodb://localhost:27017/streamy-api',
-	{ useNewUrlParser: true }
-)
+mongoose.connect(process.env.DATABASEURL || 'mongodb://localhost:27017/streamy-api', {
+	useNewUrlParser: true
+})
 
 //requiring models
 const Stream = require('./models/stream')
@@ -44,8 +43,8 @@ app.get('/streams/:id', (req, res) => {
 })
 
 app.post('/streams/new', (req, res) => {
-	let { title, description } = req.body
-	Stream.create({ title, description }, (err, createdStream) => {
+	let { title, description, userId } = req.body
+	Stream.create({ title, description, userId }, (err, createdStream) => {
 		if (err) {
 			console.log(err)
 		} else {
@@ -55,18 +54,14 @@ app.post('/streams/new', (req, res) => {
 })
 
 app.patch('/streams/:id', (req, res) => {
-	let { title, description } = req.body
-	Stream.findByIdAndUpdate(
-		req.params.id,
-		{ title, description },
-		(err, updatedStream) => {
-			if (err) {
-				console.log(err)
-			} else {
-				res.json(updatedStream)
-			}
+	let { title, description, userId } = req.body
+	Stream.findByIdAndUpdate(req.params.id, { title, description, userId }, (err, updatedStream) => {
+		if (err) {
+			console.log(err)
+		} else {
+			res.json(updatedStream)
 		}
-	)
+	})
 })
 
 app.delete('/streams/:id', (req, res) => {
