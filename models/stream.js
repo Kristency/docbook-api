@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 
 const streamSchema = new mongoose.Schema({
 	title: String,
 	description: String,
-	userId: Number
-});
+	userId: String
+})
 
-module.exports = mongoose.model('Stream', streamSchema);
+module.exports = mongoose.model('Stream', streamSchema)
