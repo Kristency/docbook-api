@@ -33,6 +33,7 @@ const Document = require('./models/document')
 app.get('/documents', (req, res) => {
 	Document.find(
 		{},
+		null,
 		{
 			sort: { createdAt: 1 }
 		},
