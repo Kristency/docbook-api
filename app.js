@@ -58,7 +58,7 @@ app.get('/documents/:id', (req, res) => {
 
 app.post('/documents/new', upload.single('file'), (req, res) => {
 	const file = req.file
-	// const s3FileURL = 'https://s3-ap-south-1.amazonaws.com/docs4dockbook/'
+	const s3FileURL = ***REMOVED***
 
 	let s3bucket = AWS.initialiseAWS()
 
@@ -78,35 +78,37 @@ app.post('/documents/new', upload.single('file'), (req, res) => {
 		} else {
 			// res.send({ data })
 
+			let { title, description, userId } = req.body
+
+			var newFileUploaded = {
+				title,
+				description,
+				userId,
+				fileLink: s3FileURL + file.originalname,
+				s3_key: params.Key
+			}
+
+			Document.create(newFileUploaded, (err, createdDocument) => {
+				if (err) {
+					console.log(err)
+				} else {
+					res.json(createdDocument)
+				}
+			})
+
 			/* FOR GETTING THE LINK - I COULD USE getSignedUrl like below - with this in the Terminal, I was getting the link of the file, but have to refactor the code to make it fully work with the React frontend.
 				The getSignedUrl method takes an operations, a params, and a callback function as arguments. The operation argument is a string that specifies the name of the operation to call, in this case 'getObject'. 
 				The 'getObject' request from the AWS S3 SDK returns a 'data.Body'. The urlParams are parameters that take the Bucket name and the name of the key, in this case the file name. 
 				The callback function takes two arguments, error and url. The url is the string we would want to place in our file linking tag to point to the file in the respective front-end code (In this case my FileUpload.js React Component).*/
 
-			var urlParams = {
-				Bucket: AWS.bucketName,
-				Key: file.originalname
-			}
+			// var urlParams = {
+			// 	Bucket: AWS.bucketName,
+			// 	Key: file.originalname
+			// }
 
-			s3bucket.getSignedUrl('getObject', urlParams, function(err, url) {
-				let { title, description, userId } = req.body
-
-				var newFileUploaded = {
-					title,
-					description,
-					userId,
-					fileLink: url,
-					s3_key: params.Key
-				}
-
-				Document.create(newFileUploaded, (err, createdDocument) => {
-					if (err) {
-						console.log(err)
-					} else {
-						res.json(createdDocument)
-					}
-				})
-			})
+			// s3bucket.getSignedUrl('getObject', urlParams, function(err, url) {
+			// 	console.log(url)
+			// })
 		}
 	})
 })
