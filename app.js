@@ -2,19 +2,27 @@ const express = require('express')
 const app = express()
 const mongoose = require('mongoose')
 const cors = require('cors')
+const multer = require('multer')
+// var AWS = require('aws-sdk')
+const AWS = require('./config/aws-config')
 
 //app config
 app.use(cors())
 app.use(express.json()) // because axios sends only json , not url-encoded
 // use bodyParser or express.urlEncoded when sending a post request directly through a form.
 
+// Multer ships with storage engines DiskStorage and MemoryStorage
+// And Multer adds a body object and a file or files object to the request object. The body object contains the values of the text fields of the form, the file or files object contains the files uploaded via the form.
+var storage = multer.memoryStorage()
+var upload = multer({ storage: storage })
+
 // Don't forget to whitelist your IP on Mongo Atlas for connecting to the database while deployed on Heroku
-mongoose.connect(process.env.DATABASEURL || 'mongodb://localhost:27017/streamy-api', {
+mongoose.connect(process.env.DATABASEURL || 'mongodb://localhost:27017/docbook-api', {
 	useNewUrlParser: true
 })
 
 //requiring models
-const Stream = require('./models/stream')
+const Document = require('./models/document')
 
 //setting up routes
 
@@ -22,54 +30,127 @@ const Stream = require('./models/stream')
 	in unexpected behaviour (like console logging instead of sending response while calling res.send() ). 
 	So don't use .then() after asynchronous database CRUD operations, instead use callback functions for now. */
 
-app.get('/streams', (req, res) => {
-	Stream.find({}, (err, foundStreams) => {
+app.get('/documents', (req, res) => {
+	Document.find(
+		{},
+		{
+			sort: { createdAt: 1 }
+		},
+		(err, foundDocuments) => {
+			if (err) {
+				console.log(err)
+			} else {
+				res.json(foundDocuments)
+			}
+		}
+	)
+})
+
+app.get('/documents/:id', (req, res) => {
+	Document.findById(req.params.id, (err, foundDocument) => {
 		if (err) {
 			console.log(err)
 		} else {
-			res.json(foundStreams)
+			res.json(foundDocument)
 		}
 	})
 })
 
-app.get('/streams/:id', (req, res) => {
-	Stream.findById(req.params.id, (err, foundStream) => {
+app.post('/documents/new', upload.single('file'), (req, res) => {
+	const file = req.file
+	// const s3FileURL = 'https://s3-ap-south-1.amazonaws.com/docs4dockbook/'
+
+	let s3bucket = AWS.initialiseAWS()
+
+	//Where you want to store your file
+
+	var params = {
+		Bucket: AWS.bucketName,
+		Key: file.originalname,
+		Body: file.buffer,
+		ContentType: file.mimetype,
+		ACL: 'public-read'
+	}
+
+	s3bucket.upload(params, function(err, data) {
 		if (err) {
-			console.log(err)
+			res.status(500).json({ error: true, Message: err })
 		} else {
-			res.json(foundStream)
+			// res.send({ data })
+
+			/* FOR GETTING THE LINK - I COULD USE getSignedUrl like below - with this in the Terminal, I was getting the link of the file, but have to refactor the code to make it fully work with the React frontend.
+				The getSignedUrl method takes an operations, a params, and a callback function as arguments. The operation argument is a string that specifies the name of the operation to call, in this case 'getObject'. 
+				The 'getObject' request from the AWS S3 SDK returns a 'data.Body'. The urlParams are parameters that take the Bucket name and the name of the key, in this case the file name. 
+				The callback function takes two arguments, error and url. The url is the string we would want to place in our file linking tag to point to the file in the respective front-end code (In this case my FileUpload.js React Component).*/
+
+			var urlParams = {
+				Bucket: AWS.bucketName,
+				Key: file.originalname
+			}
+
+			s3bucket.getSignedUrl('getObject', urlParams, function(err, url) {
+				let { title, description, userId } = req.body
+
+				var newFileUploaded = {
+					title,
+					description,
+					userId,
+					fileLink: url,
+					s3_key: params.Key
+				}
+
+				Document.create(newFileUploaded, (err, createdDocument) => {
+					if (err) {
+						console.log(err)
+					} else {
+						res.json(createdDocument)
+					}
+				})
+			})
 		}
 	})
 })
 
-app.post('/streams/new', (req, res) => {
+app.patch('/documents/:id', (req, res) => {
 	let { title, description, userId } = req.body
-	Stream.create({ title, description, userId }, (err, createdStream) => {
-		if (err) {
-			console.log(err)
-		} else {
-			res.json(createdStream)
+	Document.findByIdAndUpdate(
+		req.params.id,
+		{ title, description, userId },
+		(err, updatedDocument) => {
+			if (err) {
+				console.log(err)
+			} else {
+				res.json(updatedDocument)
+			}
 		}
-	})
+	)
 })
 
-app.patch('/streams/:id', (req, res) => {
-	let { title, description, userId } = req.body
-	Stream.findByIdAndUpdate(req.params.id, { title, description, userId }, (err, updatedStream) => {
+app.delete('/documents/:id', (req, res) => {
+	Document.findByIdAndDelete(req.params.id, (err, result) => {
 		if (err) {
 			console.log(err)
 		} else {
-			res.json(updatedStream)
-		}
-	})
-})
+			//Now Delete the file from AWS-S3
+			// https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#deleteObject-property
+			let s3bucket = AWS.initialiseAWS()
 
-app.delete('/streams/:id', (req, res) => {
-	Stream.findByIdAndDelete(req.params.id, err => {
-		if (err) {
-			console.log(err)
-		} else {
-			res.json(true)
+			let params = {
+				Bucket: AWS.bucketName,
+				Key: result.s3_key
+			}
+
+			s3bucket.deleteObject(params, (err, data) => {
+				if (err) {
+					console.log(err)
+				} else {
+					res.send({
+						status: '200',
+						responseType: 'string',
+						response: 'success'
+					})
+				}
+			})
 		}
 	})
 })
