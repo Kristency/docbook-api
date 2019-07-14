@@ -116,18 +116,14 @@ app.post('/documents/new', upload.single('file'), (req, res) => {
 })
 
 app.patch('/documents/:id', (req, res) => {
-	let { title, description, userId } = req.body
-	Document.findByIdAndUpdate(
-		req.params.id,
-		{ title, description, userId },
-		(err, updatedDocument) => {
-			if (err) {
-				console.log(err)
-			} else {
-				res.json(updatedDocument)
-			}
+	let { title, description } = req.body
+	Document.findByIdAndUpdate(req.params.id, { title, description }, (err, updatedDocument) => {
+		if (err) {
+			console.log(err)
+		} else {
+			res.json(updatedDocument)
 		}
-	)
+	})
 })
 
 app.delete('/documents/:id', (req, res) => {
