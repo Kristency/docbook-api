@@ -1,10 +1,11 @@
 const express = require('express')
 const app = express()
+require('dotenv').config()
 const mongoose = require('mongoose')
 const cors = require('cors')
 const multer = require('multer')
 // var AWS = require('aws-sdk')
-const AWS = require('./config/aws-config')
+const initialiseAWS = require('./config/aws-config')
 
 //app config
 app.use(cors())
@@ -59,14 +60,14 @@ app.get('/documents/:id', (req, res) => {
 
 app.post('/documents/new', upload.single('file'), (req, res) => {
 	const file = req.file
-	const s3FileURL = ***REMOVED***
+	const s3FileURL = process.env.AWS_Uploaded_File_URL_LINK
 
-	let s3bucket = AWS.initialiseAWS()
+	let s3bucket = initialiseAWS()
 
 	//Where you want to store your file
 
 	var params = {
-		Bucket: AWS.bucketName,
+		Bucket: process.env.AWS_BUCKET_NAME,
 		Key: file.originalname,
 		Body: file.buffer,
 		ContentType: file.mimetype,
@@ -103,7 +104,7 @@ app.post('/documents/new', upload.single('file'), (req, res) => {
 				The callback function takes two arguments, error and url. The url is the string we would want to place in our file linking tag to point to the file in the respective front-end code (In this case my FileUpload.js React Component).*/
 
 			// var urlParams = {
-			// 	Bucket: AWS.bucketName,
+			// 	Bucket: process.env.AWS_BUCKET_NAME,
 			// 	Key: file.originalname
 			// }
 
@@ -136,10 +137,10 @@ app.delete('/documents/:id', (req, res) => {
 		} else {
 			//Now Delete the file from AWS-S3
 			// https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#deleteObject-property
-			let s3bucket = AWS.initialiseAWS()
+			let s3bucket = initialiseAWS()
 
 			let params = {
-				Bucket: AWS.bucketName,
+				Bucket: process.env.AWS_BUCKET_NAME,
 				Key: result.s3_key
 			}
 
