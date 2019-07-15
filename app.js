@@ -80,12 +80,13 @@ app.post('/documents/new', upload.single('file'), (req, res) => {
 		} else {
 			// res.send({ data })
 
-			let { title, description, userId } = req.body
+			let { title, description, userId, username } = req.body
 
 			var newFileUploaded = {
 				title,
 				description,
 				userId,
+				username,
 				fileLink: s3FileURL + file.originalname,
 				s3_key: params.Key
 			}

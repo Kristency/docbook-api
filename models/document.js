@@ -5,6 +5,7 @@ const documentSchema = new mongoose.Schema(
 		title: String,
 		description: String,
 		userId: String,
+		username: String,
 		fileLink: String,
 		s3_key: String
 	},
